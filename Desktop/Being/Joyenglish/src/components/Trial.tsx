@@ -80,10 +80,6 @@ const Trial = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!user) {
-      setError('로그인이 필요합니다.');
-      return;
-    }
     if (!name.trim() || !phone.trim()) {
       setError('이름과 전화번호를 입력해주세요.');
       return;
@@ -92,8 +88,8 @@ const Trial = () => {
       setLoading(true);
       try {
         await addDoc(collection(db, 'reservations'), {
-          userId: user.uid,
-          userName: user.displayName || user.email || '익명',
+          userId: user?.uid || 'anonymous',
+          userName: user?.displayName || user?.email || '익명',
           name,
           phone,
           date: Timestamp.fromDate(date),
@@ -194,9 +190,7 @@ const Trial = () => {
             <button type="submit" className="btn-primary w-full mt-4" disabled={!date || !time || loading}>
               {loading ? '예약 중...' : '예약하기'}
             </button>
-            {!user && (
-              <div className="text-center text-gray-400 text-sm mt-2">예약을 위해 <a href="/login" className="text-primary-400 underline">로그인</a>이 필요합니다.</div>
-            )}
+
           </form>
         )}
       </div>

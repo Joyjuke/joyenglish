@@ -79,10 +79,6 @@ const GroupClassReservation = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!user) {
-      setError('로그인이 필요합니다.');
-      return;
-    }
     if (!name.trim() || !phone.trim()) {
       setError('이름과 전화번호를 입력해주세요.');
       return;
@@ -94,8 +90,8 @@ const GroupClassReservation = () => {
     setLoading(true);
     try {
       await addDoc(collection(db, 'groupClassReservations'), {
-        userId: user.uid,
-        userName: user.displayName || user.email || '익명',
+        userId: user?.uid || 'anonymous',
+        userName: user?.displayName || user?.email || '익명',
         name,
         phone,
         date: Timestamp.fromDate(date),

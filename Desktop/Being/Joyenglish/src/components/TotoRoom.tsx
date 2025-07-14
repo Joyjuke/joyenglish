@@ -29,12 +29,6 @@ const TotoRoom = () => {
   };
 
   const handlePayment = () => {
-    if (!user) {
-      // 로그인되지 않은 경우 로그인 페이지로 이동
-      navigate('/login');
-      return;
-    }
-    
     if (!selectedDate) {
       alert('날짜를 선택해주세요.');
       return;
@@ -123,11 +117,7 @@ const TotoRoom = () => {
               신청하기
             </button>
             
-            {!user && (
-              <div className="text-center text-gray-400 text-sm">
-                결제를 위해 <a href="/login" className="text-primary-400 underline">로그인</a>이 필요합니다.
-              </div>
-            )}
+
           </div>
         </div>
       </div>
