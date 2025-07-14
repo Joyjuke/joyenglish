@@ -31,7 +31,7 @@ const Hero = () => {
           className="space-y-8 pt-20"
         >
           {/* Main Heading */}
-          <div className="space-y-4">
+          <div className="space-y-4 pt-10">
             <h1 className="text-5xl md:text-7xl font-bold leading-tight">
               <span className="gradient-text">Joy English</span>
               <br />
@@ -100,7 +100,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-16"
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
           >
             {/* <div className="text-center">
               <div className="text-3xl md:text-4xl font-bold gradient-text">300+</div>
