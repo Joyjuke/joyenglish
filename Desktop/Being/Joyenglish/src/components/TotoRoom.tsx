@@ -90,7 +90,6 @@ const TotoRoom = () => {
               <p className="text-2xl font-bold text-primary-400">5,000원</p>
               <p className="text-sm text-gray-400">1회 참가 (60분)</p>
             </div>
-
             
             <div>
               <label className="block text-gray-300 mb-2">참가 날짜 선택</label>

@@ -25,7 +25,8 @@ const handleNaverLogin = () => {
 const Login = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-dark-900">
     <div className="bg-dark-800 p-8 rounded-xl shadow-lg w-full max-w-md">
-      <h2 className="text-3xl font-bold mb-8 text-center">소셜 간편 로그인</h2>
+      <h2 className="text-3xl font-bold mb-8 text-center">로그인 기능은 현재 비활성화되어 있습니다.</h2>
+      {/*
       <button
         className="btn-primary w-full mb-4 flex items-center justify-center gap-2"
         onClick={handleGoogleLogin}
@@ -47,6 +48,7 @@ const Login = () => (
         <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/Naver_Logotype.svg" alt="Naver" className="w-6 h-6 bg-white rounded" />
         Naver로 로그인
       </button>
+      */}
     </div>
   </div>
 );
