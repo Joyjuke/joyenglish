@@ -1,56 +1,84 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { app } from '../firebase';
+import { useNavigate } from 'react-router-dom';
 
-const provider = new GoogleAuthProvider();
+const ADMIN_EMAILS = ['joyjisunlee0123@gmail.com'];
 
-const handleGoogleLogin = async () => {
-  const auth = getAuth(app);
-  try {
-    await signInWithPopup(auth, provider);
-    // 로그인 성공 후 리다이렉트 등 처리
-  } catch (error) {
-    alert('구글 로그인 실패: ' + error);
-  }
-};
+const Login = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-const handleKakaoLogin = () => {
-  alert('카카오 로그인은 추후 지원됩니다.');
-};
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    setError('');
+    
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      // 관리자 이메일인지 확인
+      if (user.email && ADMIN_EMAILS.includes(user.email)) {
+        console.log('관리자 로그인 성공:', user.email);
+        // 관리자 페이지로 리다이렉트
+        navigate('/admin/schedule');
+      } else {
+        // 관리자가 아닌 경우 로그아웃
+        await auth.signOut();
+        setError('관리자만 로그인이 가능합니다.');
+        console.log('관리자가 아닌 사용자 로그인 시도:', user.email);
+      }
+    } catch (error: any) {
+      console.error('로그인 오류:', error);
+      setError('로그인 중 오류가 발생했습니다: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-const handleNaverLogin = () => {
-  alert('네이버 로그인은 추후 지원됩니다.');
-};
-
-const Login = () => (
-  <div className="min-h-screen flex flex-col items-center justify-center bg-dark-900">
-    <div className="bg-dark-800 p-8 rounded-xl shadow-lg w-full max-w-md">
-      <h2 className="text-3xl font-bold mb-8 text-center">로그인 기능은 현재 비활성화되어 있습니다.</h2>
-      {/*
-      <button
-        className="btn-primary w-full mb-4 flex items-center justify-center gap-2"
-        onClick={handleGoogleLogin}
-      >
-        <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-6 h-6" />
-        Google로 로그인
-      </button>
-      <button
-        className="btn-primary w-full mb-4 flex items-center justify-center gap-2 bg-yellow-400 text-black hover:bg-yellow-500"
-        onClick={handleKakaoLogin}
-      >
-        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/kakaotalk/kakaotalk-original.svg" alt="Kakao" className="w-6 h-6" />
-        Kakao로 로그인
-      </button>
-      <button
-        className="btn-primary w-full flex items-center justify-center gap-2 bg-green-500 text-white hover:bg-green-600"
-        onClick={handleNaverLogin}
-      >
-        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/Naver_Logotype.svg" alt="Naver" className="w-6 h-6 bg-white rounded" />
-        Naver로 로그인
-      </button>
-      */}
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-dark-900">
+      <div className="bg-dark-800 p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h2 className="text-3xl font-bold mb-8 text-center">관리자 로그인</h2>
+        <p className="text-gray-400 text-center mb-6">
+          관리자 계정으로만 로그인이 가능합니다.
+        </p>
+        
+        {error && (
+          <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+        
+        <button
+          className="btn-primary w-full mb-4 flex items-center justify-center gap-2"
+          onClick={handleGoogleLogin}
+          disabled={isLoading}
+        >
+          <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-6 h-6" />
+          {isLoading ? '로그인 중...' : 'Google로 관리자 로그인'}
+        </button>
+        
+        <div className="text-center">
+          <p className="text-sm text-gray-500 mb-2">허용된 관리자 이메일:</p>
+          <p className="text-xs text-gray-600">{ADMIN_EMAILS.join(', ')}</p>
+        </div>
+        
+        <div className="mt-6 text-center">
+          <button 
+            className="text-gray-400 hover:text-white underline"
+            onClick={() => navigate('/')}
+          >
+            메인 페이지로 돌아가기
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default Login; 

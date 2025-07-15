@@ -29,6 +29,7 @@ const Navbar = ({ isMenuOpen, setIsMenuOpen }: NavbarProps) => {
     { name: '그룹 클래스 예약', to: '/group-class' },
     { name: '토토방', to: '/toto-room' },
     { name: '상담문의', scrollTo: 'contact' },
+    { name: '관리자 로그인', to: '/login' },
   ]
 
   const handleScrollTo = (id: string) => {

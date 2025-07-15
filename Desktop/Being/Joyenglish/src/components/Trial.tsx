@@ -38,7 +38,13 @@ const Trial = () => {
       setSlots(slotList);
       // 날짜 목록 추출
       const dateSet = new Set(slotList.map(s => s.date.toDate().toDateString()));
-      setAvailableDates(Array.from(dateSet).map(d => new Date(d)));
+      const availableDatesList = Array.from(dateSet).map(d => new Date(d));
+      setAvailableDates(availableDatesList);
+      
+      // 디버깅 로그
+      console.log('전체 스케줄:', slotList);
+      console.log('사용 가능한 날짜들:', availableDatesList);
+      console.log('토요일 스케줄:', slotList.filter(s => s.date.toDate().getDay() === 6));
     };
     fetchSlots();
   }, []);
