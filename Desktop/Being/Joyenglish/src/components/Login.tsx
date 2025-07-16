@@ -24,8 +24,8 @@ const Login = () => {
       // 관리자 이메일인지 확인
       if (user.email && ADMIN_EMAILS.includes(user.email)) {
         console.log('관리자 로그인 성공:', user.email);
-        // 관리자 페이지로 리다이렉트
-        navigate('/admin/schedule');
+        // 관리자 메인 페이지로 리다이렉트
+        navigate('/admin');
       } else {
         // 관리자가 아닌 경우 로그아웃
         await auth.signOut();
@@ -63,10 +63,6 @@ const Login = () => {
           {isLoading ? '로그인 중...' : 'Google로 관리자 로그인'}
         </button>
         
-        <div className="text-center">
-          <p className="text-sm text-gray-500 mb-2">허용된 관리자 이메일:</p>
-          <p className="text-xs text-gray-600">{ADMIN_EMAILS.join(', ')}</p>
-        </div>
         
         <div className="mt-6 text-center">
           <button 

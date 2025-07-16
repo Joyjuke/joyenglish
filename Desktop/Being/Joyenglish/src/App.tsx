@@ -10,6 +10,7 @@ import Footer from './components/Footer'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './components/Login';
 import Trial from './components/Trial';
+import AdminMain from './components/AdminMain';
 import AdminSchedule from './components/AdminSchedule';
 import GroupClassReservation from './components/GroupClassReservation';
 import AdminGroupClassSchedule from './components/AdminGroupClassSchedule';
@@ -50,6 +51,7 @@ function App() {
                 </>
               } />
               <Route path="/trial" element={<Trial />} />
+              <Route path="/admin" element={<AdminMain />} />
               <Route path="/admin/schedule" element={<AdminSchedule />} />
               <Route path="/login" element={<Login />} />
               <Route path="/group-class" element={<GroupClassReservation />} />

@@ -58,7 +58,15 @@ const GroupClassReservation = () => {
       const dateString = date.toDateString();
       const timesForDate = slots
         .filter(slot => slot.date.toDate().toDateString() === dateString)
-        .map(slot => slot.time);
+        .map(slot => slot.time)
+        .sort((a, b) => {
+          // 시간을 분으로 변환하여 비교
+          const timeToMinutes = (time: string) => {
+            const [hours, minutes] = time.split(':').map(Number);
+            return hours * 60 + minutes;
+          };
+          return timeToMinutes(a) - timeToMinutes(b);
+        });
       setAvailableTimes(timesForDate);
       setTime('');
     } else {
@@ -179,23 +187,27 @@ const GroupClassReservation = () => {
                   tileDisabled={tileDisabled}
                 />
               </div>
-              {date && availableTimes.length > 0 && (
-                <div>
-                  <label className="block text-gray-300 mb-2">시간 선택</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {availableTimes.map((t) => (
-                      <button
-                        type="button"
-                        key={t}
-                        className={`px-4 py-3 rounded-lg font-bold border text-lg shadow transition-all duration-150 ${time === t ? 'bg-primary-500 border-primary-500 text-white scale-105' : 'bg-dark-700 border-gray-600 text-primary-200 hover:bg-primary-600 hover:text-white'}`}
-                        onClick={() => setTime(t)}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
+              <div>
+                <label className="block text-gray-300 mb-2">시간 선택</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {!date && (
+                    <div className="col-span-3 text-gray-400 text-center py-4">날짜를 먼저 선택해주세요.</div>
+                  )}
+                  {date && availableTimes.length === 0 && (
+                    <div className="col-span-3 text-gray-400 text-center py-4">선택한 날짜에 가능한 시간이 없습니다.</div>
+                  )}
+                  {availableTimes.map((t) => (
+                    <button
+                      type="button"
+                      key={t}
+                      className={`px-4 py-3 rounded-lg font-bold border text-lg shadow transition-all duration-150 ${time === t ? 'bg-primary-500 border-primary-500 text-white scale-105' : 'bg-dark-700 border-gray-600 text-primary-200 hover:bg-primary-600 hover:text-white'}`}
+                      onClick={() => setTime(t)}
+                    >
+                      {t}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
               {error && (
                 <div className="text-red-400 text-center mb-2">{error}</div>
               )}

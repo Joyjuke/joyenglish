@@ -54,7 +54,15 @@ const Trial = () => {
       // 선택한 날짜에 가능한 시간만 추출
       const times = slots
         .filter(s => s.date.toDate().toDateString() === date.toDateString())
-        .map(s => s.time);
+        .map(s => s.time)
+        .sort((a, b) => {
+          // 시간을 분으로 변환하여 비교
+          const timeToMinutes = (time: string) => {
+            const [hours, minutes] = time.split(':').map(Number);
+            return hours * 60 + minutes;
+          };
+          return timeToMinutes(a) - timeToMinutes(b);
+        });
       setAvailableTimes(times);
       setTime('');
     } else {
@@ -177,7 +185,12 @@ const Trial = () => {
             <div>
               <label className="block text-gray-300 mb-2 mt-4">시간 선택</label>
               <div className="grid grid-cols-4 gap-2">
-                {/* {availableTimes.length === 0 && <div className="col-span-4 text-gray-400">선택 가능한 시간이 없습니다.</div>} */}
+                {!date && (
+                  <div className="col-span-4 text-gray-400 text-center py-4">날짜를 먼저 선택해주세요.</div>
+                )}
+                {date && availableTimes.length === 0 && (
+                  <div className="col-span-4 text-gray-400 text-center py-4">선택한 날짜에 가능한 시간이 없습니다.</div>
+                )}
                 {availableTimes.map((t) => (
                   <button
                     type="button"

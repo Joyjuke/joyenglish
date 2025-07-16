@@ -91,21 +91,28 @@ const AdminGroupClassSchedule = () => {
     }
   };
 
-  // 자동 업데이트 체크 (매주 일요일)
+  // 자동 업데이트 체크 (매주 화요일)
   useEffect(() => {
     const checkAutoUpdate = () => {
       const today = new Date();
-      if (today.getDay() === 0) { // 일요일인 경우
-        // 오전 9시에 자동 업데이트 실행
+      if (today.getDay() === 2) { // 화요일인 경우
+        // 오전 8시에 자동 업데이트 실행
         const currentHour = today.getHours();
-        if (currentHour === 9) {
+        const currentMinute = today.getMinutes();
+        
+        // 8시 0분~9분 사이에 실행 (정확히 8시에 실행되지 않을 수 있으므로)
+        if (currentHour === 8 && currentMinute < 10) {
+          console.log('자동 그룹 클래스 스케줄 업데이트 실행:', today.toLocaleString());
           generateNextWeekSchedule();
         }
       }
     };
 
-    // 매일 체크
-    const interval = setInterval(checkAutoUpdate, 60 * 60 * 1000); // 1시간마다 체크
+    // 페이지 로드 시 즉시 체크
+    checkAutoUpdate();
+    
+    // 10분마다 체크 (더 정확한 시간 체크를 위해)
+    const interval = setInterval(checkAutoUpdate, 10 * 60 * 1000);
     return () => clearInterval(interval);
   }, [slots]);
 
@@ -196,8 +203,17 @@ const AdminGroupClassSchedule = () => {
       return dateA.getTime() - dateB.getTime();
     }
     
-    // 날짜가 같으면 시간순으로 정렬
-    return a.time.localeCompare(b.time);
+    // 날짜가 같으면 시간순으로 정렬 (HH:MM 형식으로 정렬)
+    const timeA = a.time;
+    const timeB = b.time;
+    
+    // 시간을 분으로 변환하여 비교
+    const timeToMinutes = (time: string) => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+    
+    return timeToMinutes(timeA) - timeToMinutes(timeB);
   });
 
   // 캘린더에서 날짜 클릭 시 필터 적용
@@ -260,16 +276,20 @@ const AdminGroupClassSchedule = () => {
         <div className="mb-6 p-4 bg-dark-700 rounded-lg">
           <h3 className="text-lg font-semibold mb-3 text-center">자동 스케줄 업데이트</h3>
           <p className="text-sm text-gray-400 mb-3 text-center">
-            매주 일요일 오전 9시에 자동으로 다음 주 스케줄이 생성됩니다.
+            매주 화요일 오전 8시에 자동으로 다음 주 스케줄이 생성됩니다.<br/>
+            <span className="text-primary-300">지금 바로 다음 주 스케줄을 생성하려면 아래 버튼을 클릭하세요.</span>
           </p>
-          <div className="flex gap-2">
+          <div className="space-y-2">
             <button 
-              className="btn-primary flex-1" 
+              className="btn-primary w-full" 
               onClick={generateNextWeekSchedule}
               disabled={autoUpdateLoading}
             >
-              {autoUpdateLoading ? '업데이트 중...' : '다음 주 스케줄 수동 생성'}
+              {autoUpdateLoading ? '업데이트 중...' : '다음 주 스케줄 즉시 생성'}
             </button>
+            <div className="text-xs text-gray-500 text-center">
+              생성될 시간: 월요일 14:00,15:00,16:00 | 화요일 14:00,15:00,16:00,20:00,21:00 | 수요일 14:00,15:00,16:00,22:00 | 목요일 14:00,15:00,16:00,20:00,21:00,22:00 | 금요일 14:00,15:00,16:00,20:00,21:00,22:00 | 토요일 09:00,10:00,11:00,12:00
+            </div>
           </div>
         </div>
 
@@ -343,7 +363,7 @@ const AdminGroupClassSchedule = () => {
             )}
           </div>
           <div className="flex justify-center mt-8">
-            <button className="btn-primary px-8 py-3 text-lg" onClick={() => navigate('/')}>완료</button>
+            <button className="btn-primary px-8 py-3 text-lg" onClick={() => navigate('/admin')}>관리자 대시보드로 돌아가기</button>
           </div>
         </>
       </div>

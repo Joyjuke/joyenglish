@@ -98,14 +98,21 @@ const AdminSchedule = () => {
       if (today.getDay() === 0) { // 일요일인 경우
         // 오전 9시에 자동 업데이트 실행
         const currentHour = today.getHours();
-        if (currentHour === 9) {
+        const currentMinute = today.getMinutes();
+        
+        // 9시 0분~9분 사이에 실행 (정확히 9시에 실행되지 않을 수 있으므로)
+        if (currentHour === 9 && currentMinute < 10) {
+          console.log('자동 스케줄 업데이트 실행:', today.toLocaleString());
           generateNextWeekSchedule();
         }
       }
     };
 
-    // 매일 체크
-    const interval = setInterval(checkAutoUpdate, 60 * 60 * 1000); // 1시간마다 체크
+    // 페이지 로드 시 즉시 체크
+    checkAutoUpdate();
+    
+    // 10분마다 체크 (더 정확한 시간 체크를 위해)
+    const interval = setInterval(checkAutoUpdate, 10 * 60 * 1000);
     return () => clearInterval(interval);
   }, [slots]);
 
@@ -249,15 +256,21 @@ const AdminSchedule = () => {
         <div className="mb-6 p-4 bg-dark-700 rounded-lg">
           <h3 className="text-lg font-semibold mb-3 text-center">자동 스케줄 업데이트</h3>
           <p className="text-sm text-gray-400 mb-3 text-center">
-            매주 일요일 오전 9시에 자동으로 다음 주 스케줄이 생성됩니다.
+            매주 일요일 오전 9시에 자동으로 다음 주 스케줄이 생성됩니다.<br/>
+            <span className="text-primary-300">지금 바로 다음 주 스케줄을 생성하려면 아래 버튼을 클릭하세요.</span>
           </p>
-          <button 
-            className="btn-primary w-full" 
-            onClick={generateNextWeekSchedule}
-            disabled={autoUpdateLoading}
-          >
-            {autoUpdateLoading ? '업데이트 중...' : '다음 주 스케줄 수동 생성'}
-          </button>
+          <div className="space-y-2">
+            <button 
+              className="btn-primary w-full" 
+              onClick={generateNextWeekSchedule}
+              disabled={autoUpdateLoading}
+            >
+              {autoUpdateLoading ? '업데이트 중...' : '다음 주 스케줄 즉시 생성'}
+            </button>
+            <div className="text-xs text-gray-500 text-center">
+              생성될 시간: 월요일 14:00,15:00,16:00 | 화요일 14:00,15:00,16:00,20:00,21:00 | 수요일 14:00,15:00,16:00,22:00 | 목요일 14:00,15:00,16:00,20:00,21:00,22:00 | 금요일 14:00,15:00 | 토요일 09:00,14:00,15:00,16:00,17:00
+            </div>
+          </div>
         </div>
 
         <>
@@ -330,7 +343,7 @@ const AdminSchedule = () => {
               )}
             </div>
             <div className="flex justify-center mt-8">
-              <button className="btn-primary px-8 py-3 text-lg" onClick={() => navigate('/')}>완료</button>
+              <button className="btn-primary px-8 py-3 text-lg" onClick={() => navigate('/admin')}>관리자 대시보드로 돌아가기</button>
             </div>
           </>
       </div>
