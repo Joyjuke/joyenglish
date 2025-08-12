@@ -7,14 +7,16 @@ import 'react-calendar/dist/Calendar.css';
 import './calendar-custom.css'; // 추가: 커스텀 스타일 적용
 import { useNavigate } from 'react-router-dom';
 
+const auth = getAuth();
+
 // 요일별 시간대 매핑 (0: 일, 1: 월, ... 6: 토)
 const WEEKDAY_TIMES: { [key: number]: string[] } = {
-  1: ['14:00', '15:00', '16:00'], // Monday
-  2: ['14:00', '15:00', '16:00', '20:00', '21:00'], // Tuesday
-  3: ['14:00', '15:00', '16:00', '22:00'], // Wednesday
-  4: ['14:00', '15:00', '16:00', '20:00', '21:00', '22:00'], // Thursday
-  5: ['14:00', '15:00'], // Friday
-  6: ['09:00', '14:00', '15:00', '16:00', '17:00'], // Saturday
+  1: ['14:00', '15:00', '16:00','19:00','20:00','21:00','22:00','23:00'], // Monday
+  2: ['14:00', '15:00', '16:00','19:00','20:00','21:00','22:00','23:00'], // Tuesday
+  3: ['14:00', '15:00', '16:00','19:00','20:00','21:00','22:00','23:00'], // Wednesday
+  4: ['14:00', '15:00', '16:00','19:00','20:00','21:00','22:00','23:00'], // Thursday
+  5: ['14:00', '15:00', '16:00','19:00','20:00','21:00','22:00','23:00'], // Friday
+  6: ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00'] // Saturday
 };
 
 const ADMIN_EMAILS = ['joyjisunlee0123@gmail.com'];
@@ -36,11 +38,43 @@ const AdminSchedule = () => {
   const [autoUpdateLoading, setAutoUpdateLoading] = useState(false);
   const [selectedFilterDate, setSelectedFilterDate] = useState<Date | null>(null); // 캘린더에서 선택한 필터 날짜
 
+  // ADD THE FUNCTION HERE - RIGHT AFTER THIS LINE
+  const refreshAdminToken = async () => {
+    try {
+      console.log('Starting admin access check...');
+      
+      // Check if user is authenticated and has the right email
+      if (auth.currentUser && auth.currentUser.email === 'joyjisunlee0123@gmail.com') {
+        console.log('Admin access confirmed');
+        
+        // Force token refresh to ensure latest permissions
+        await auth.currentUser.getIdToken(true);
+        console.log('Token refreshed');
+        
+        // Now try to fetch slots
+        await fetchSlots();
+      } else {
+        console.log('User not authorized as admin');
+      }
+    } catch (error) {
+      console.error('Error checking admin access:', error);
+    }
+  };
+
   const fetchSlots = async () => {
-    setLoading(true);
-    const snap = await getDocs(collection(db, 'availableSlots'));
-    setSlots(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    setLoading(false);
+    try {
+      setLoading(true);
+      console.log('Fetching slots...');
+      
+      const snap = await getDocs(collection(db, 'availableSlots'));
+      console.log('Slots fetched successfully:', snap.docs.length);
+      
+      setSlots(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (error) {
+      console.error('Error fetching slots:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 다음 주 스케줄 자동 생성 함수
@@ -117,7 +151,7 @@ const AdminSchedule = () => {
   }, [slots]);
 
   useEffect(() => {
-    fetchSlots();
+    refreshAdminToken();
     // eslint-disable-next-line
   }, []);
 
