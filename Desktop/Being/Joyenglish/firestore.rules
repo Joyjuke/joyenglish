@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow public read access to available slots (for booking display)
+    match /availableSlots/{document} {
+      allow read: if true; // Public read access
+      allow write: if request.auth != null && 
+        request.auth.token.email == 'joyjisunlee0123@gmail.com';
+    }
+    
+    // Allow public read access to group class slots (for booking display)
+    match /groupClassSlots/{document} {
+      allow read: if true; // Public read access
+      allow write: if request.auth != null && 
+        request.auth.token.email == 'joyjisunlee0123@gmail.com';
+    }
+    
+    // Allow public read access to reservations, authenticated users to create
+    match /groupClassReservations/{document} {
+      allow read: if true; // Public read access
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && 
+        request.auth.token.email == 'joyjisunlee0123@gmail.com';
+    }
+    
+    // Default rule - deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

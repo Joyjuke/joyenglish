@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import { getAuth } from 'firebase/auth';
-import { getFirestore, collection, addDoc, getDocs, Timestamp } from 'firebase/firestore';
-import { app } from '../firebase';
+import { collection, addDoc, getDocs, Timestamp } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 
@@ -28,12 +27,9 @@ const GroupClassReservation = () => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
 
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
   useEffect(() => {
     const fetchSlots = async () => {
-      const snap = await getDocs(collection(db, 'groupClassSlots'));
+      const snap = await getDocs(collection(db, 'availableSlots'));
       const slotList: GroupClassSlot[] = snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
       setSlots(slotList);
       const dateSet = new Set(slotList.map(s => s.date.toDate().toDateString()));

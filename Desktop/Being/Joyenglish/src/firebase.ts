@@ -1,4 +1,6 @@
 import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 // import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
@@ -12,10 +14,15 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+// Initialize Firebase services
+const auth = getAuth(app);
+const db = getFirestore(app);
+
 // Analytics는 개발 환경에서는 사용하지 않음
 // let analytics;
 // if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
 //   analytics = getAnalytics(app);
 // }
 
-export { app }; 
+export { app, auth, db }; 

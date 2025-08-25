@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext } from 'react'
-import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
-import { app } from './firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from './firebase';
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 // import Classes from './components/Classes'
@@ -27,7 +27,8 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const auth = getAuth(app);
+    // Remove this line as we're now importing from firebase.ts
+    // const auth = getAuth(app);
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       console.log('Firebase 로그인 상태:', user); // 추가

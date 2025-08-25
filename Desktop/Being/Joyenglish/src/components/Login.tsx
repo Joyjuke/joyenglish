@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { app } from '../firebase';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 
 const ADMIN_EMAILS = ['joyjisunlee0123@gmail.com'];
@@ -14,7 +14,8 @@ const Login = () => {
     setIsLoading(true);
     setError('');
     
-    const auth = getAuth(app);
+    // Remove this line as we're now importing from firebase.ts
+    // const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
     
     try {

@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './calendar-custom.css'; // 추가: 커스텀 스타일 적용
-import { getAuth } from 'firebase/auth';
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, Timestamp, query, where } from 'firebase/firestore';
-import { app } from '../firebase';
+import { collection, addDoc, getDocs, deleteDoc, doc, Timestamp, query, where } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 
 // 요일별 시간대 매핑 (0: 일, 1: 월, ... 6: 토)
@@ -20,8 +19,6 @@ const WEEKDAY_TIMES: { [key: number]: string[] } = {
 const ADMIN_EMAILS = ['joyjisunlee0123@gmail.com'];
 
 const AdminGroupClassSchedule = () => {
-  const auth = getAuth(app);
-  const db = getFirestore(app);
   const user = auth.currentUser;
   const isAdmin = user && ADMIN_EMAILS.includes(user.email || '');
   const navigate = useNavigate();
