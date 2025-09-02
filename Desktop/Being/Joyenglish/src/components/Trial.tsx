@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import { getAuth } from 'firebase/auth';
 import { getFirestore, collection, addDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { app } from '../firebase';
 import { useNavigate } from 'react-router-dom';
@@ -23,31 +22,40 @@ const Trial = () => {
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
+  const { user, loading: authLoading } = useContext(AuthContext);
   const [name, setName] = useState(user?.displayName || '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(localStorage.getItem('phone') || '');
 
-  const auth = getAuth(app);
   const db = getFirestore(app);
 
   useEffect(() => {
     const fetchSlots = async () => {
-      const snap = await getDocs(collection(db, 'availableSlots'));
-      const slotList: Slot[] = snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
-      setSlots(slotList);
-      // 날짜 목록 추출
-      const dateSet = new Set(slotList.map(s => s.date.toDate().toDateString()));
-      const availableDatesList = Array.from(dateSet).map(d => new Date(d));
-      setAvailableDates(availableDatesList);
-      
-      // 디버깅 로그
-      console.log('전체 스케줄:', slotList);
-      console.log('사용 가능한 날짜들:', availableDatesList);
-      console.log('토요일 스케줄:', slotList.filter(s => s.date.toDate().getDay() === 6));
+      try {
+        console.log('Fetching available slots...');
+        const snap = await getDocs(collection(db, 'availableSlots'));
+        const slotList: Slot[] = snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
+        setSlots(slotList);
+        
+        // 날짜 목록 추출
+        const dateSet = new Set(slotList.map(s => s.date.toDate().toDateString()));
+        const availableDatesList = Array.from(dateSet).map(d => new Date(d));
+        setAvailableDates(availableDatesList);
+        
+        // 디버깅 로그
+        console.log('전체 스케줄:', slotList);
+        console.log('사용 가능한 날짜들:', availableDatesList);
+        console.log('토요일 스케줄:', slotList.filter(s => s.date.toDate().getDay() === 6));
+      } catch (error) {
+        console.error('Error fetching slots:', error);
+        setError('스케줄 정보를 불러오는 중 오류가 발생했습니다.');
+      }
     };
-    fetchSlots();
-  }, []);
+    
+    if (!authLoading) {
+      fetchSlots();
+    }
+  }, [db, authLoading]);
 
   useEffect(() => {
     if (date) {
@@ -91,31 +99,81 @@ const Trial = () => {
     localStorage.setItem('phone', phone);
   }, [phone]);
 
+  const testFirebaseConnection = async () => {
+    try {
+      console.log('Testing Firebase connection...');
+      console.log('Testing Firestore read...');
+      
+      // Test reading from availableSlots collection
+      const testSnap = await getDocs(collection(db, 'availableSlots'));
+      console.log('Firestore read test successful, got', testSnap.docs.length, 'documents');
+      
+      return true;
+    } catch (error) {
+      console.error('Firebase connection test failed:', error);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
     if (!name.trim() || !phone.trim()) {
       setError('이름과 전화번호를 입력해주세요.');
       return;
     }
-    if (date && time) {
-      setLoading(true);
-      try {
-        await addDoc(collection(db, 'reservations'), {
-          userId: user?.uid || 'anonymous',
-          userName: user?.displayName || user?.email || '익명',
-          name,
-          phone,
-          date: Timestamp.fromDate(date),
-          time,
-          createdAt: Timestamp.now(),
-        });
-        setSubmitted(true);
-      } catch (err) {
-        setError('예약 저장 중 오류가 발생했습니다.');
-      } finally {
-        setLoading(false);
+    
+    if (!date || !time) {
+      setError('날짜와 시간을 선택해주세요.');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      console.log('Submitting reservation...', { name, phone, date, time });
+      console.log('Current user:', user);
+      console.log('Firestore instance:', db);
+      
+      // Test Firebase connection first
+      const isConnected = await testFirebaseConnection();
+      if (!isConnected) {
+        throw new Error('Firebase 연결을 확인할 수 없습니다.');
       }
+      
+      const reservationData = {
+        userId: user?.uid || 'anonymous',
+        userName: user?.displayName || user?.email || '익명',
+        name,
+        phone,
+        date: Timestamp.fromDate(date),
+        time,
+        createdAt: Timestamp.now(),
+      };
+      
+      console.log('Reservation data to save:', reservationData);
+      
+      const docRef = await addDoc(collection(db, 'reservations'), reservationData);
+      
+      console.log('Reservation submitted successfully with ID:', docRef.id);
+      setSubmitted(true);
+    } catch (err: any) {
+      console.error('Error submitting reservation:', err);
+      console.error('Error code:', err.code);
+      console.error('Error message:', err.message);
+      console.error('Full error object:', err);
+      
+      if (err.code === 'permission-denied') {
+        setError('권한이 없습니다. 관리자에게 문의하세요.');
+      } else if (err.code === 'unavailable') {
+        setError('서비스가 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.');
+      } else if (err.message.includes('Firebase 연결')) {
+        setError(err.message);
+      } else {
+        setError('예약 저장 중 오류가 발생했습니다: ' + (err.message || '알 수 없는 오류'));
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -123,6 +181,15 @@ const Trial = () => {
   const tileDisabled = ({ date: d }: { date: Date }) => {
     return !availableDates.some(av => av.toDateString() === d.toDateString());
   };
+
+  // Show loading state while auth is initializing
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-dark-900 py-12">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-dark-900 py-12">

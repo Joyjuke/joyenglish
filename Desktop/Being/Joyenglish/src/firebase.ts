@@ -13,11 +13,18 @@ const firebaseConfig = {
   measurementId: "G-YP2PHN8KJK"
 };
 
+console.log('Initializing Firebase with config:', firebaseConfig);
+
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+console.log('Firebase app initialized:', app);
 
 // Initialize Firebase services
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+console.log('Firebase auth initialized:', auth);
+console.log('Firebase firestore initialized:', db);
 
 // Analytics는 개발 환경에서는 사용하지 않음
 // let analytics;

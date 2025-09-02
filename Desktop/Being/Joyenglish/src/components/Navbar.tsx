@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
-import { Menu, X } from 'lucide-react'
+import { useState, useEffect, useContext } from 'react'
+import { Menu, X, LogOut } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { AuthContext } from '../App'
+import { auth } from '../firebase'
 
 interface NavbarProps {
   isMenuOpen: boolean
@@ -11,6 +13,7 @@ const Navbar = ({ isMenuOpen, setIsMenuOpen }: NavbarProps) => {
   const [isScrolled, setIsScrolled] = useState(false)
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +24,16 @@ const Navbar = ({ isMenuOpen, setIsMenuOpen }: NavbarProps) => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      navigate('/');
+      setIsMenuOpen(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   const navItems = [
     { name: '홈', to: '/' },
     { name: '커리큘럼', external: true, href: 'https://joyjukebox.notion.site/Business-English-Syllabus-141bfd2c8aa880cc9173fdf4ad2251d0' },
@@ -29,8 +42,18 @@ const Navbar = ({ isMenuOpen, setIsMenuOpen }: NavbarProps) => {
     { name: '그룹 클래스 예약', to: '/group-class' },
     { name: '토토방', to: '/toto-room' },
     { name: '상담문의', scrollTo: 'contact' },
-    { name: '관리자 로그인', to: '/login' },
-  ]
+  ];
+
+  // Add admin-specific items if user is logged in
+  if (user) {
+    navItems.push(
+      { name: '관리자 메인', to: '/admin' },
+      { name: '스케줄 관리', to: '/admin/schedule' },
+      { name: '그룹 클래스 스케줄', to: '/admin/group-class-schedule' }
+    );
+  } else {
+    navItems.push({ name: '관리자 로그인', to: '/login' });
+  }
 
   const handleScrollTo = (id: string) => {
     if (location.pathname !== '/') {
@@ -111,6 +134,22 @@ const Navbar = ({ isMenuOpen, setIsMenuOpen }: NavbarProps) => {
                   </Link>
                 )
               )}
+              
+              {/* User status and logout */}
+              {user && (
+                <div className="flex items-center space-x-4">
+                  <span className="text-green-400 text-sm">
+                    {user.displayName || user.email}
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className="text-gray-300 hover:text-red-400 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center gap-2"
+                  >
+                    <LogOut size={16} />
+                    로그아웃
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -171,6 +210,22 @@ const Navbar = ({ isMenuOpen, setIsMenuOpen }: NavbarProps) => {
                   {item.name}
                 </Link>
               )
+            )}
+            
+            {/* Mobile user status and logout */}
+            {user && (
+              <div className="border-t border-gray-700 pt-4 mt-4">
+                <div className="px-3 py-2 text-green-400 text-sm">
+                  {user.displayName || user.email}
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-300 hover:text-red-400 block w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 flex items-center gap-2"
+                >
+                  <LogOut size={16} />
+                  로그아웃
+                </button>
+              </div>
             )}
           </div>
         </div>
