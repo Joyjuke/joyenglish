@@ -6,14 +6,9 @@ import { collection, addDoc, getDocs, deleteDoc, doc, Timestamp, query, where } 
 import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 
-// 요일별 시간대 매핑 (0: 일, 1: 월, ... 6: 토)
+// 요일별 시간대 매핑 (0: 일, 1: 월, ... 6: 토) - 화요일 8시만
 const WEEKDAY_TIMES: { [key: number]: string[] } = {
-  // 1: ['14:00', '15:00', '16:00', '18:00', '19:00', '20:00', '21:00'], // Monday
-  2: ['20:00', '21:00'], // Tuesday
-  // 3: ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'], // Wednesday
-  // 4: ['14:00', '15:00', '16:00', '17:00', '18:00', '20:00', '21:00'], // Thursday
-  // 5: ['14:00', '15:00', '16:00', '17:00'], // Friday
-  // 6: ['09:00', '12:00'], // Saturday
+  2: ['20:00'], // Tuesday only
 };
 
 const ADMIN_EMAILS = ['joyjisunlee0123@gmail.com'];
@@ -285,7 +280,7 @@ const AdminGroupClassSchedule = () => {
               {autoUpdateLoading ? '업데이트 중...' : '다음 주 스케줄 즉시 생성'}
             </button>
             <div className="text-xs text-gray-500 text-center">
-              생성될 시간: 월요일 14:00,15:00,16:00 | 화요일 14:00,15:00,16:00,20:00,21:00 | 수요일 14:00,15:00,16:00,22:00 | 목요일 14:00,15:00,16:00,20:00,21:00,22:00 | 금요일 14:00,15:00,16:00,20:00,21:00,22:00 | 토요일 09:00,10:00,11:00,12:00
+              생성될 시간: 화요일 20:00
             </div>
           </div>
         </div>

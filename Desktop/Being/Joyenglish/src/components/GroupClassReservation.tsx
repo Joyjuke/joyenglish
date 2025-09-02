@@ -29,7 +29,7 @@ const GroupClassReservation = () => {
 
   useEffect(() => {
     const fetchSlots = async () => {
-      const snap = await getDocs(collection(db, 'availableSlots'));
+      const snap = await getDocs(collection(db, 'groupClassSlots'));
       const slotList: GroupClassSlot[] = snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
       setSlots(slotList);
       const dateSet = new Set(slotList.map(s => s.date.toDate().toDateString()));

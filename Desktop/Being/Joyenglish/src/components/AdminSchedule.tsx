@@ -206,8 +206,14 @@ const AdminSchedule = () => {
   // 필터링된 슬롯 계산
   const filteredSlots = selectedFilterDate 
     ? slots.filter(slot => {
-        const slotDate = slot.date && slot.date.toDate ? slot.date.toDate().toISOString().split('T')[0] : '';
-        return slotDate === selectedFilterDate.toISOString().split('T')[0];
+        if (!slot.date || !slot.date.toDate) return false;
+        const slotDate = slot.date.toDate();
+        const selectedDate = selectedFilterDate;
+        
+        // 년, 월, 일만 비교 (시간 무시)
+        return slotDate.getFullYear() === selectedDate.getFullYear() &&
+               slotDate.getMonth() === selectedDate.getMonth() &&
+               slotDate.getDate() === selectedDate.getDate();
       })
     : slots;
 
@@ -297,7 +303,7 @@ const AdminSchedule = () => {
               {autoUpdateLoading ? '업데이트 중...' : '다음 주 스케줄 즉시 생성'}
             </button>
             <div className="text-xs text-gray-500 text-center">
-              생성될 시간: 월요일 14:00,15:00,16:00 | 화요일 14:00,15:00,16:00,20:00,21:00 | 수요일 14:00,15:00,16:00,22:00 | 목요일 14:00,15:00,16:00,20:00,21:00,22:00 | 금요일 14:00,15:00 | 토요일 09:00,14:00,15:00,16:00,17:00
+              생성될 시간: 월요일 14:00,15:00,16:00,18:00,19:00,20:00,21:00 | 화요일 14:00,15:00,16:00,17:00,18:00,21:00 | 수요일 14:00,15:00,16:00,17:00,18:00,19:00,20:00 | 목요일 14:00,15:00,16:00,17:00,18:00,20:00,21:00 | 금요일 14:00,15:00,16:00,17:00 | 토요일 09:00,12:00
             </div>
           </div>
         </div>
