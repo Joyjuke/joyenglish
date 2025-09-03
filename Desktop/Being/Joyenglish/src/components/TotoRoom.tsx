@@ -62,9 +62,9 @@ const TotoRoom = () => {
         <div className="flex-1 flex flex-col justify-center">
           <h2 className="text-3xl font-bold mb-4">토토방 (토요토론방)</h2>
           <p className="text-lg text-gray-300 mb-6">
-            매주 토요일 진행되는 온라인 토론방입니다!<br/>
-            다양한 주제로 영어로 자유롭게 토론하며 실력을 키워보세요.<br/>
-            소수 정예로 진행되어 개인별 피드백도 받을 수 있습니다.
+            매주 토요일 아침 10시에 진행되는 온라인 토론방입니다!<br/>
+            WSJ, HBR, Time, The Economist 등 뉴스 및 경제 메거진을 주제로 자유롭게 토론하며 실력을 키워보세요.<br/>
+            소수 정예로 진행되어 토론을 통한 발표와 실력 향상을 도모합니다.
           </p>
           
           <div className="space-y-4">
@@ -72,10 +72,9 @@ const TotoRoom = () => {
               <h3 className="text-xl font-semibold mb-2">참가 혜택</h3>
               <ul className="text-gray-300 space-y-1">
                 <li>• 실시간 영어 토론 연습</li>
-                <li>• 다양한 주제로 흥미로운 대화</li>
-                <li>• 소수 정예 (최대 6명)</li>
-                <li>• 30분 topic 분석 강의</li>
-                <li>• 30분 개별 토론</li>
+                <li>• 다양한 비즈니스 주제로 흥미로운 대화</li>
+                <li>• 참가자 전원 수업자료 제공</li>
+                <li>• 20분 topic 강의 10분 토론 주제 브리핑 20분 소그룹 토론 10분 발표</li>
               </ul>
             </div>
             

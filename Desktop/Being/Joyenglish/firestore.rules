@@ -31,6 +31,13 @@ service cloud.firestore {
         request.auth.token.email == 'joyjisunlee0123@gmail.com';
     }
     
+    // Allow anyone to create payments (for toto room registration), admin to read/update/delete
+    match /payments/{document} {
+      allow create: if true; // Anyone can create payments (including non-logged in users)
+      allow read, update, delete: if request.auth != null && 
+        request.auth.token.email == 'joyjisunlee0123@gmail.com';
+    }
+    
     // Default rule - deny all other access
     match /{document=**} {
       allow read, write: if false;
