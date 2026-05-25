@@ -38,6 +38,13 @@ service cloud.firestore {
         request.auth.token.email == 'joyjisunlee0123@gmail.com';
     }
     
+    // Allow anyone to submit contact inquiries, admin to read/update/delete
+    match /contacts/{document} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null &&
+        request.auth.token.email == 'joyjisunlee0123@gmail.com';
+    }
+    
     // Default rule - deny all other access
     match /{document=**} {
       allow read, write: if false;

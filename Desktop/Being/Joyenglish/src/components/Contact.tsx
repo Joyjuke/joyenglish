@@ -49,8 +49,14 @@ const Contact = () => {
       setEmail(user?.email || '');
       setPhone(localStorage.getItem('phone') || '');
       setMessage('');
-    } catch (err) {
-      setError('문의 저장 중 오류가 발생했습니다.');
+    } catch (err: unknown) {
+      console.error('Contact form save failed:', err);
+      const code = err && typeof err === 'object' && 'code' in err ? String((err as { code: string }).code) : '';
+      if (code === 'permission-denied') {
+        setError('권한이 없습니다. Firestore 보안 규칙을 확인해주세요.');
+      } else {
+        setError('문의 저장 중 오류가 발생했습니다.');
+      }
     } finally {
       setLoading(false);
     }

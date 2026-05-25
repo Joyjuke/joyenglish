@@ -1,26 +1,37 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import { getFirestore, collection, addDoc, Timestamp, getDocs } from 'firebase/firestore';
+import './calendar-custom.css';
+import { getFirestore, collection, addDoc, Timestamp } from 'firebase/firestore';
 import { app } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
+import { X, Plus } from 'lucide-react';
+import TimeScrollPicker from './TimeScrollPicker';
 
-interface Slot {
+const MAX_SLOTS = 3;
+const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+
+interface PreferredSlot {
   id: string;
-  date: Timestamp;
+  date: Date;
   time: string;
 }
 
+const slotKey = (date: Date, time: string) =>
+  `${date.toDateString()}-${time}`;
+
+const formatSlotLabel = (date: Date, time: string) =>
+  `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 (${DAY_LABELS[date.getDay()]}) ${time}`;
+
 const Trial = () => {
-  const [date, setDate] = useState<Date | null>(null);
-  const [time, setTime] = useState('');
+  const [calendarDate, setCalendarDate] = useState<Date | null>(null);
+  const [pickerHour, setPickerHour] = useState('14');
+  const [pickerMinute, setPickerMinute] = useState('00');
+  const [chosenSlots, setChosenSlots] = useState<PreferredSlot[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [availableDates, setAvailableDates] = useState<Date[]>([]);
-  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const navigate = useNavigate();
   const { user, loading: authLoading } = useContext(AuthContext);
   const [name, setName] = useState(user?.displayName || '');
@@ -30,60 +41,8 @@ const Trial = () => {
   const db = getFirestore(app);
 
   useEffect(() => {
-    const fetchSlots = async () => {
-      try {
-        console.log('Fetching available slots...');
-        const snap = await getDocs(collection(db, 'availableSlots'));
-        const slotList: Slot[] = snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
-        setSlots(slotList);
-        
-        // 날짜 목록 추출
-        const dateSet = new Set(slotList.map(s => s.date.toDate().toDateString()));
-        const availableDatesList = Array.from(dateSet).map(d => new Date(d));
-        setAvailableDates(availableDatesList);
-        
-        // 디버깅 로그
-        console.log('전체 스케줄:', slotList);
-        console.log('사용 가능한 날짜들:', availableDatesList);
-        console.log('토요일 스케줄:', slotList.filter(s => s.date.toDate().getDay() === 6));
-      } catch (error) {
-        console.error('Error fetching slots:', error);
-        setError('스케줄 정보를 불러오는 중 오류가 발생했습니다.');
-      }
-    };
-    
-    if (!authLoading) {
-      fetchSlots();
-    }
-  }, [db, authLoading]);
-
-  useEffect(() => {
-    if (date) {
-      // 선택한 날짜에 가능한 시간만 추출
-      const times = slots
-        .filter(s => s.date.toDate().toDateString() === date.toDateString())
-        .map(s => s.time)
-        .sort((a, b) => {
-          // 시간을 분으로 변환하여 비교
-          const timeToMinutes = (time: string) => {
-            const [hours, minutes] = time.split(':').map(Number);
-            return hours * 60 + minutes;
-          };
-          return timeToMinutes(a) - timeToMinutes(b);
-        });
-      setAvailableTimes(times);
-      setTime('');
-    } else {
-      setAvailableTimes([]);
-      setTime('');
-    }
-  }, [date, slots]);
-
-  useEffect(() => {
     if (submitted) {
-      const timer = setTimeout(() => {
-        navigate('/');
-      }, 5000);
+      const timer = setTimeout(() => navigate('/'), 5000);
       return () => clearTimeout(timer);
     }
   }, [submitted, navigate]);
@@ -99,90 +58,104 @@ const Trial = () => {
     localStorage.setItem('phone', phone);
   }, [phone]);
 
-  const testFirebaseConnection = async () => {
-    try {
-      console.log('Testing Firebase connection...');
-      console.log('Testing Firestore read...');
-      
-      // Test reading from availableSlots collection
-      const testSnap = await getDocs(collection(db, 'availableSlots'));
-      console.log('Firestore read test successful, got', testSnap.docs.length, 'documents');
-      
-      return true;
-    } catch (error) {
-      console.error('Firebase connection test failed:', error);
-      return false;
+  const addSlot = (date: Date, time: string) => {
+    if (chosenSlots.length >= MAX_SLOTS) {
+      setError(`희망 시간은 최대 ${MAX_SLOTS}개까지 선택할 수 있습니다.`);
+      return;
     }
+    if (chosenSlots.some((s) => slotKey(s.date, s.time) === slotKey(date, time))) {
+      setError('이미 선택한 시간입니다.');
+      return;
+    }
+    setChosenSlots((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), date: new Date(date), time },
+    ]);
+    setError('');
+  };
+
+  const removeSlot = (id: string) => {
+    setChosenSlots((prev) => prev.filter((s) => s.id !== id));
+    setError('');
+  };
+
+  const handleAddTime = () => {
+    if (!calendarDate) {
+      setError('날짜를 먼저 선택해주세요.');
+      return;
+    }
+    const time = `${pickerHour}:${pickerMinute}`;
+    addSlot(calendarDate, time);
+  };
+
+  const tileDisabled = ({ date: d }: { date: Date }) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const day = new Date(d);
+    day.setHours(0, 0, 0, 0);
+    if (day < today) return true;
+    return d.getDay() === 0; // 일요일 비활성화
+  };
+
+  const tileClassName = ({ date: d }: { date: Date }) => {
+    if (d.getDay() === 0) return 'calendar-sunday';
+    if (d.getDay() === 6) return 'calendar-saturday';
+    return '';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (!name.trim() || !phone.trim()) {
       setError('이름과 전화번호를 입력해주세요.');
       return;
     }
-    
-    if (!date || !time) {
-      setError('날짜와 시간을 선택해주세요.');
+
+    if (chosenSlots.length !== MAX_SLOTS) {
+      setError(`희망 시간 ${MAX_SLOTS}개를 모두 선택해주세요. (현재 ${chosenSlots.length}개)`);
       return;
     }
-    
+
     setLoading(true);
     try {
-      console.log('Submitting reservation...', { name, phone, date, time });
-      console.log('Current user:', user);
-      console.log('Firestore instance:', db);
-      
-      // Test Firebase connection first
-      const isConnected = await testFirebaseConnection();
-      if (!isConnected) {
-        throw new Error('Firebase 연결을 확인할 수 없습니다.');
-      }
-      
       const reservationData = {
         userId: user?.uid || 'anonymous',
         userName: user?.displayName || user?.email || '익명',
         name,
+        email,
         phone,
-        date: Timestamp.fromDate(date),
-        time,
+        preferredSlots: chosenSlots.map((s) => ({
+          date: Timestamp.fromDate(s.date),
+          time: s.time,
+        })),
         createdAt: Timestamp.now(),
       };
-      
-      console.log('Reservation data to save:', reservationData);
-      
-      const docRef = await addDoc(collection(db, 'reservations'), reservationData);
-      
-      console.log('Reservation submitted successfully with ID:', docRef.id);
+
+      await addDoc(collection(db, 'reservations'), reservationData);
       setSubmitted(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error submitting reservation:', err);
-      console.error('Error code:', err.code);
-      console.error('Error message:', err.message);
-      console.error('Full error object:', err);
-      
-      if (err.code === 'permission-denied') {
+      const code =
+        err && typeof err === 'object' && 'code' in err
+          ? String((err as { code: string }).code)
+          : '';
+      if (code === 'permission-denied') {
         setError('권한이 없습니다. 관리자에게 문의하세요.');
-      } else if (err.code === 'unavailable') {
+      } else if (code === 'unavailable') {
         setError('서비스가 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.');
-      } else if (err.message.includes('Firebase 연결')) {
-        setError(err.message);
       } else {
-        setError('예약 저장 중 오류가 발생했습니다: ' + (err.message || '알 수 없는 오류'));
+        const message =
+          err && typeof err === 'object' && 'message' in err
+            ? String((err as { message: string }).message)
+            : '알 수 없는 오류';
+        setError('예약 저장 중 오류가 발생했습니다: ' + message);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // 캘린더에서 선택 가능한 날짜만 활성화
-  const tileDisabled = ({ date: d }: { date: Date }) => {
-    return !availableDates.some(av => av.toDateString() === d.toDateString());
-  };
-
-  // Show loading state while auth is initializing
   if (authLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-dark-900 py-12">
@@ -192,18 +165,35 @@ const Trial = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-dark-900 py-12">
-      <div className="bg-dark-800 p-8 rounded-xl shadow-lg w-full max-w-lg">
-        <h2 className="text-3xl font-bold mb-8 text-center">무료 시범 강의 신청</h2>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-dark-900 py-12 px-4">
+      <div className="bg-dark-800 p-6 md:p-8 rounded-xl shadow-lg w-full max-w-5xl">
+        <h2 className="text-3xl font-bold mb-2 text-center">무료 시범 강의 신청</h2>
+        <p className="text-gray-400 text-center mb-8 text-sm">
+          캘린더에서 날짜와 시간을 선택해 희망 시간 3개를 담아 주세요.
+        </p>
+
         {submitted ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-center text-xl text-green-400 mb-4">예약이 완료되었습니다!</div>
-            <button className="btn-primary px-8 py-3 text-lg" onClick={() => navigate('/')}>확인</button>
-            <div className="text-gray-400 text-sm mt-4">5초 후 메인화면으로 이동합니다.</div>
+            <div className="text-center text-xl text-green-400 mb-4">
+              예약이 완료되었습니다!
+            </div>
+            <p className="text-gray-400 text-center mb-6 text-sm">
+              선택하신 3개의 희망 시간으로 연락드리겠습니다.
+            </p>
+            <button
+              type="button"
+              className="btn-primary px-8 py-3 text-lg"
+              onClick={() => navigate('/')}
+            >
+              확인
+            </button>
+            <div className="text-gray-400 text-sm mt-4">
+              5초 후 메인화면으로 이동합니다.
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-gray-300 mb-2">이름</label>
                 <input
@@ -211,7 +201,7 @@ const Trial = () => {
                   className="w-full px-4 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white"
                   placeholder="이름을 입력하세요"
                   value={name}
-                  onChange={e => setName(e.target.value)}
+                  onChange={(e) => setName(e.target.value)}
                   required
                 />
               </div>
@@ -222,7 +212,7 @@ const Trial = () => {
                   className="w-full px-4 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white"
                   placeholder="이메일을 입력하세요"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
@@ -233,50 +223,121 @@ const Trial = () => {
                   className="w-full px-4 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white"
                   placeholder="전화번호를 입력하세요"
                   value={phone}
-                  onChange={e => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value)}
                   required
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-gray-300 mb-2">날짜 선택</label>
-              <Calendar
-                onChange={(val) => setDate(val as Date)}
-                value={date}
-                minDate={new Date()}
-                calendarType="gregory"
-                className="rounded-lg overflow-hidden"
-                tileDisabled={tileDisabled}
-              />
-            </div>
-            <div>
-              <label className="block text-gray-300 mb-2 mt-4">시간 선택</label>
-              <div className="grid grid-cols-4 gap-2">
-                {!date && (
-                  <div className="col-span-4 text-gray-400 text-center py-4">날짜를 먼저 선택해주세요.</div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left: calendar + time picker */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-gray-300 mb-2 font-medium">
+                    날짜 선택
+                  </label>
+                  <Calendar
+                    onChange={(val) => setCalendarDate(val as Date)}
+                    value={calendarDate}
+                    minDate={new Date()}
+                    calendarType="gregory"
+                    className="rounded-lg overflow-hidden w-full"
+                    tileDisabled={tileDisabled}
+                    tileClassName={tileClassName}
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-2 font-medium">
+                    시간 선택
+                  </label>
+                  {!calendarDate ? (
+                    <div className="text-gray-400 text-center py-8 text-sm bg-dark-700/30 border border-gray-700 rounded-xl">
+                      날짜를 먼저 선택해주세요.
+                    </div>
+                  ) : (
+                    <div className="bg-dark-700/30 border border-gray-600 rounded-xl p-4">
+                      <TimeScrollPicker
+                        hour={pickerHour}
+                        minute={pickerMinute}
+                        onHourChange={setPickerHour}
+                        onMinuteChange={setPickerMinute}
+                        disabled={chosenSlots.length >= MAX_SLOTS}
+                      />
+                      <p className="text-center text-white text-lg font-semibold mt-3 tabular-nums">
+                        {pickerHour}:{pickerMinute}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleAddTime}
+                        disabled={chosenSlots.length >= MAX_SLOTS}
+                        className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-primary-500 text-primary-400 hover:bg-primary-600/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                      >
+                        <Plus size={18} />
+                        희망 시간에 추가
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right: chosen slots list */}
+              <div className="flex flex-col">
+                <label className="block text-gray-300 mb-2 font-medium">
+                  선택한 희망 시간 ({chosenSlots.length}/{MAX_SLOTS})
+                </label>
+                <div className="flex-1 bg-dark-700/50 border border-gray-600 rounded-xl p-4 min-h-[280px]">
+                  {chosenSlots.length === 0 ? (
+                    <p className="text-gray-500 text-center py-12 text-sm">
+                      왼쪽에서 날짜와 시간을 선택하면
+                      <br />
+                      여기에 최대 3개까지 표시됩니다.
+                    </p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {chosenSlots.map((slot, index) => (
+                        <li
+                          key={slot.id}
+                          className="flex items-center justify-between gap-3 bg-dark-800 border border-gray-600 rounded-lg px-4 py-3"
+                        >
+                          <div className="min-w-0">
+                            <span className="text-primary-400 text-xs font-medium">
+                              {index + 1}순위
+                            </span>
+                            <p className="text-white text-sm mt-0.5 truncate">
+                              {formatSlotLabel(slot.date, slot.time)}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeSlot(slot.id)}
+                            className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-dark-700 transition-colors"
+                            aria-label="삭제"
+                          >
+                            <X size={18} />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                {chosenSlots.length < MAX_SLOTS && (
+                  <p className="text-gray-500 text-xs mt-2">
+                    월–토 중 원하는 날짜·시간을 {MAX_SLOTS}개 선택해 주세요. (분 단위: 30분 간격)
+                  </p>
                 )}
-                {date && availableTimes.length === 0 && (
-                  <div className="col-span-4 text-gray-400 text-center py-4">선택한 날짜에 가능한 시간이 없습니다.</div>
-                )}
-                {availableTimes.map((t) => (
-                  <button
-                    type="button"
-                    key={t}
-                    className={`px-2 py-2 rounded-lg border text-white ${time === t ? 'bg-primary-600 border-primary-600' : 'bg-dark-700 border-gray-600'}`}
-                    onClick={() => setTime(t)}
-                  >
-                    {t}
-                  </button>
-                ))}
               </div>
             </div>
+
             {error && (
-              <div className="text-red-400 text-center mb-2">{error}</div>
+              <div className="text-red-400 text-center text-sm">{error}</div>
             )}
-            <button type="submit" className="btn-primary w-full mt-4" disabled={!date || !time || loading}>
+            <button
+              type="submit"
+              className="btn-primary w-full"
+              disabled={chosenSlots.length !== MAX_SLOTS || loading}
+            >
               {loading ? '예약 중...' : '예약하기'}
             </button>
-
           </form>
         )}
       </div>
@@ -284,4 +345,4 @@ const Trial = () => {
   );
 };
 
-export default Trial; 
+export default Trial;
